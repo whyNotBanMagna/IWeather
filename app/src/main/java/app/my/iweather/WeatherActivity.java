@@ -39,7 +39,6 @@ public class WeatherActivity extends AppCompatActivity {
 
     public DrawerLayout drawerLayout;
 
-    public SwipeRefreshLayout swipeRefresh;
 
     private ScrollView weatherLayout;
 
@@ -67,12 +66,10 @@ public class WeatherActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (Build.VERSION.SDK_INT >= 21) {
-            View decorView = getWindow().getDecorView();
-            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
-            getWindow().setStatusBarColor(Color.TRANSPARENT);
-        }
+        View decorView = getWindow().getDecorView();
+        decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+        getWindow().setStatusBarColor(Color.TRANSPARENT);
         setContentView(R.layout.activity_weather);
         // 初始化各控件
         bingPicImg = (ImageView) findViewById(R.id.bing_pic_img);
@@ -83,36 +80,27 @@ public class WeatherActivity extends AppCompatActivity {
         weatherInfoText = (TextView) findViewById(R.id.weather_info_text);
         forecastLayout = (LinearLayout) findViewById(R.id.forecast_layout);
         sportText = (TextView) findViewById(R.id.sport_text);
-        swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
-        swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
         drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         navButton = (ImageView) findViewById(R.id.nav_button);
         etAddress = (EditText) findViewById(R.id.etAddress);
         flRoot = (FrameLayout) findViewById(R.id.fl);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        String latitude = prefs.getString("latitude", "");
-        String longitude = prefs.getString("longitude", "");
+        String cityName = prefs.getString("city", "");
 
         weatherLayout.setVisibility(View.INVISIBLE);
-        requestWeather(latitude,longitude);
+        requestWeather(cityName);
 
         flRoot.setOnClickListener(v -> {
             titleCity.setVisibility(View.VISIBLE);
             titleUpdateTime.setVisibility(View.VISIBLE);
             etAddress.setVisibility(View.GONE);
         });
-
-        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                requestWeather(latitude,longitude);
-            }
-        });
         navButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String address = etAddress.getText().toString().trim();
+                etAddress.setText("");
                 if (address.isEmpty()){
                     titleCity.setVisibility(View.GONE);
                     titleUpdateTime.setVisibility(View.GONE);
@@ -123,11 +111,6 @@ public class WeatherActivity extends AppCompatActivity {
                 }
             }
         });
-        String bingPic = prefs.getString("bing_pic", null);
-        if (bingPic != null) {
-            Glide.with(this).load(bingPic).into(bingPicImg);
-        } else {
-        }
     }
 
 
@@ -148,7 +131,6 @@ public class WeatherActivity extends AppCompatActivity {
                         } else {
                             Toast.makeText(WeatherActivity.this, "query weather info failed", Toast.LENGTH_SHORT).show();
                         }
-                        swipeRefresh.setRefreshing(false);
                     }
                 });
             }
@@ -161,7 +143,6 @@ public class WeatherActivity extends AppCompatActivity {
                     public void run() {
                         progressBar.setVisibility(View.GONE);
                         Toast.makeText(WeatherActivity.this, "query weather info failed", Toast.LENGTH_SHORT).show();
-                        swipeRefresh.setRefreshing(false);
                     }
                 });
             }
@@ -186,10 +167,12 @@ public class WeatherActivity extends AppCompatActivity {
                         progressBar.setVisibility(View.GONE);
                         if (weather != null) {
                             showWeatherInfo(weather);
+                            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this);
+                            prefs.edit().putString("city", address).commit();
                         } else {
                             Toast.makeText(WeatherActivity.this, "query weather info failed", Toast.LENGTH_SHORT).show();
+                            requestWeather("New York");
                         }
-                        swipeRefresh.setRefreshing(false);
                         titleCity.setVisibility(View.VISIBLE);
                         titleUpdateTime.setVisibility(View.VISIBLE);
                         etAddress.setVisibility(View.GONE);
@@ -204,8 +187,8 @@ public class WeatherActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         progressBar.setVisibility(View.GONE);
-                        Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
-                        swipeRefresh.setRefreshing(false);
+                        Toast.makeText(WeatherActivity.this, "query weather info failed", Toast.LENGTH_SHORT).show();
+                        requestWeather("New York");
                     }
                 });
             }
@@ -216,7 +199,7 @@ public class WeatherActivity extends AppCompatActivity {
      * 处理并展示Weather实体类中的数据。
      */
     private void showWeatherInfo(Weather weather) {
-        String cityName = weather.getTimezone();
+        String cityName = weather.getAddress();
         String updateTime = weather.getCurrentConditions().getDatetime();
         titleCity.setText(cityName);
         titleUpdateTime.setText(updateTime);
@@ -239,10 +222,6 @@ public class WeatherActivity extends AppCompatActivity {
         weatherLayout.setVisibility(View.VISIBLE);
         Intent intent = new Intent(this, AutoUpdateService.class);
         startService(intent);
-
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        prefs.edit().putString("latitude", String.valueOf(weather.getLatitude())).commit();
-        prefs.edit().putString("longitude", String.valueOf(weather.getLongitude())).commit();
     }
 
 

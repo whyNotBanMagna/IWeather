@@ -4,25 +4,31 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+
 public class MainActivity extends AppCompatActivity {
 
     private static final int PERMISSION_REQUEST_CODE = 123;
     private LocationManager locationManager;
     private LocationListener locationListener;
-    private String latitude = "";
-    private String longitude = "";
+    private String city = "";
 
     private SharedPreferences prefs;
 
@@ -32,9 +38,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        latitude = prefs.getString("latitude", "");
-        longitude = prefs.getString("longitude", "");
-        if (latitude.isEmpty()|| longitude.isEmpty()) {
+        city = prefs.getString("city", "");
+        if (city.isEmpty()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                     requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_CODE);
@@ -72,8 +77,8 @@ public class MainActivity extends AppCompatActivity {
                 // 处理位置更新
                 double latitude = location.getLatitude();
                 double longitude = location.getLongitude();
-                prefs.edit().putString("latitude",String.valueOf(latitude)).commit();
-                prefs.edit().putString("longitude",String.valueOf(longitude)).commit();
+                String cityName = getCityName(latitude,longitude);
+                prefs.edit().putString("city",cityName).commit();
                 Intent intent = new Intent(MainActivity.this, WeatherActivity.class);
                 startActivity(intent);
                 finish();
@@ -107,5 +112,21 @@ public class MainActivity extends AppCompatActivity {
         if (locationManager != null && locationListener != null) {
             locationManager.removeUpdates(locationListener);
         }
+    }
+
+    private String getCityName(double latitude, double longitude) {
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        List<Address> addresses;
+        try {
+            addresses = geocoder.getFromLocation(latitude, longitude, 1);
+
+            if (addresses != null && addresses.size() > 0) {
+                return addresses.get(0).getLocality();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 }

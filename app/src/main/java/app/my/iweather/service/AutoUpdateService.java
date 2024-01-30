@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
+import android.view.View;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -46,25 +47,18 @@ public class AutoUpdateService extends Service {
      */
     private void updateWeather(){
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        String latitude = prefs.getString("latitude", "");
-        String longitude = prefs.getString("longitude", "");
-        if (latitude.isEmpty() || longitude.isEmpty()) {
-            String weatherUrl = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/" + latitude +"," + longitude + "?key=XHEWK3SWP6FUNFTEDKGCGYJ4T";
+        String cityName = prefs.getString("city", "");
+        if (cityName.isEmpty()) {
+            String weatherUrl = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/" + cityName + "?key=XHEWK3SWP6FUNFTEDKGCGYJ4T";
             HttpUtil.sendOkHttpRequest(weatherUrl, new Callback() {
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
-                    final String responseText = response.body().string();
-                    final Weather weather = Utility.handleWeatherResponse(responseText);
-                    if (weather != null) {
-                        prefs.edit().putString("latitude",latitude).apply();
-                        prefs.edit().putString("longitude",longitude).apply();
-                    }
+                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(AutoUpdateService.this);
+                    prefs.edit().putString("city", cityName).commit();
                 }
 
                 @Override
-                public void onFailure(Call call, IOException e) {
-                    e.printStackTrace();
-                }
+                public void onFailure(Call call, IOException e) {}
             });
         }
     }
