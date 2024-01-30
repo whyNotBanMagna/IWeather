@@ -37,9 +37,6 @@ import okhttp3.Response;
 
 public class WeatherActivity extends AppCompatActivity {
 
-    public DrawerLayout drawerLayout;
-
-
     private ScrollView weatherLayout;
 
     private ImageView navButton;
@@ -56,7 +53,7 @@ public class WeatherActivity extends AppCompatActivity {
 
     private TextView sportText;
 
-    private ImageView bingPicImg;
+    private ImageView ivCloseEdit;
 
     private EditText etAddress;
 
@@ -72,7 +69,6 @@ public class WeatherActivity extends AppCompatActivity {
         getWindow().setStatusBarColor(Color.TRANSPARENT);
         setContentView(R.layout.activity_weather);
         // 初始化各控件
-        bingPicImg = (ImageView) findViewById(R.id.bing_pic_img);
         weatherLayout = (ScrollView) findViewById(R.id.weather_layout);
         titleCity = (TextView) findViewById(R.id.title_city);
         titleUpdateTime = (TextView) findViewById(R.id.title_update_time);
@@ -80,9 +76,9 @@ public class WeatherActivity extends AppCompatActivity {
         weatherInfoText = (TextView) findViewById(R.id.weather_info_text);
         forecastLayout = (LinearLayout) findViewById(R.id.forecast_layout);
         sportText = (TextView) findViewById(R.id.sport_text);
-        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         navButton = (ImageView) findViewById(R.id.nav_button);
         etAddress = (EditText) findViewById(R.id.etAddress);
+        ivCloseEdit = (ImageView) findViewById(R.id.ivCloseEdit);
         flRoot = (FrameLayout) findViewById(R.id.fl);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -91,11 +87,7 @@ public class WeatherActivity extends AppCompatActivity {
         weatherLayout.setVisibility(View.INVISIBLE);
         requestWeather(cityName);
 
-        flRoot.setOnClickListener(v -> {
-            titleCity.setVisibility(View.VISIBLE);
-            titleUpdateTime.setVisibility(View.VISIBLE);
-            etAddress.setVisibility(View.GONE);
-        });
+
         navButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -105,12 +97,24 @@ public class WeatherActivity extends AppCompatActivity {
                     titleCity.setVisibility(View.GONE);
                     titleUpdateTime.setVisibility(View.GONE);
                     etAddress.setVisibility(View.VISIBLE);
+                    ivCloseEdit.setVisibility(View.VISIBLE);
                 }else {
                     requestWeather(address);
                     SoftInputUtil.INSTANCE.hideSoftInputView(WeatherActivity.this);
                 }
             }
         });
+
+        ivCloseEdit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                titleCity.setVisibility(View.VISIBLE);
+                titleUpdateTime.setVisibility(View.VISIBLE);
+                etAddress.setVisibility(View.GONE);
+                ivCloseEdit.setVisibility(View.GONE);
+            }
+        });
+
     }
 
 
@@ -206,7 +210,7 @@ public class WeatherActivity extends AppCompatActivity {
         degreeText.setText(fahrenheitToCelsius(weather.getCurrentConditions().getTemp()));
         weatherInfoText.setText(weather.getCurrentConditions().getConditions());
         forecastLayout.removeAllViews();
-        for (Weather.DaysBean daysBean : weather.getDays().subList(0,5)) {
+        for (Weather.DaysBean daysBean : weather.getDays()) {
             View view = LayoutInflater.from(this).inflate(R.layout.forecast_item, forecastLayout, false);
             TextView dateText = (TextView) view.findViewById(R.id.date_text);
             TextView infoText = (TextView) view.findViewById(R.id.info_text);
