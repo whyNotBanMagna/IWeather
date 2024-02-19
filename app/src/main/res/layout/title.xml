@@ -8,11 +8,11 @@
         android:id="@+id/nav_button"
         android:layout_width="30dp"
         android:layout_height="30dp"
-        android:padding="3dp"
+        android:padding="5dp"
         android:layout_marginLeft="10dp"
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
-        android:background="@drawable/ic_search" />
+        android:src="@drawable/ic_search" />
 
 
 
@@ -55,6 +55,5 @@
         android:layout_alignParentEnd="true"
         android:layout_centerVertical="true"
         android:background="@drawable/ic_back" />
-
 
 </RelativeLayout>

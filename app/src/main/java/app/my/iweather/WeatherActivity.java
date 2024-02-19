@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -24,13 +25,19 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.bumptech.glide.Glide;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import java.io.IOException;
+import java.util.ArrayList;
 
 import app.my.iweather.gson.Weather;
 import app.my.iweather.service.AutoUpdateService;
 import app.my.iweather.util.HttpUtil;
 import app.my.iweather.util.SoftInputUtil;
 import app.my.iweather.util.Utility;
+import kotlin.Unit;
+import kotlin.jvm.functions.Function1;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
@@ -58,7 +65,9 @@ public class WeatherActivity extends AppCompatActivity {
     private EditText etAddress;
 
     private FrameLayout flRoot;
-    private ProgressBar  progressBar;
+    private ProgressBar progressBar;
+
+    private RecentSearchFragment recentSearchFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,7 +92,18 @@ public class WeatherActivity extends AppCompatActivity {
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         String cityName = prefs.getString("city", "");
-
+        String dataString = prefs.getString("search", "[]");
+        ArrayList<String> list = new Gson().fromJson(dataString, new TypeToken<ArrayList<String>>() {
+        }.getType());
+        SearchObj.INSTANCE.getData().addAll(list);
+        recentSearchFragment = RecentSearchFragment.newInstance();
+        recentSearchFragment.setOnItemClick(integer -> {
+            requestWeather(SearchObj.INSTANCE.getData().get(integer));
+            ivCloseEdit.setVisibility(View.GONE);
+            getSupportFragmentManager().beginTransaction().hide(recentSearchFragment).commitAllowingStateLoss();
+            SoftInputUtil.INSTANCE.hideSoftInputView(WeatherActivity.this);
+            return null;
+        });
         weatherLayout.setVisibility(View.INVISIBLE);
         requestWeather(cityName);
 
@@ -93,13 +113,20 @@ public class WeatherActivity extends AppCompatActivity {
             public void onClick(View v) {
                 String address = etAddress.getText().toString().trim();
                 etAddress.setText("");
-                if (address.isEmpty()){
+                if (address.isEmpty()) {
                     titleCity.setVisibility(View.GONE);
                     titleUpdateTime.setVisibility(View.GONE);
                     etAddress.setVisibility(View.VISIBLE);
                     ivCloseEdit.setVisibility(View.VISIBLE);
-                }else {
+                    if (recentSearchFragment.isAdded()) {
+                        getSupportFragmentManager().beginTransaction().show(recentSearchFragment).commitAllowingStateLoss();
+                    } else {
+                        getSupportFragmentManager().beginTransaction().add(R.id.frameLayout, recentSearchFragment).commitAllowingStateLoss();
+                    }
+                } else {
                     requestWeather(address);
+                    ivCloseEdit.setVisibility(View.GONE);
+                    getSupportFragmentManager().beginTransaction().hide(recentSearchFragment).commitAllowingStateLoss();
                     SoftInputUtil.INSTANCE.hideSoftInputView(WeatherActivity.this);
                 }
             }
@@ -112,15 +139,16 @@ public class WeatherActivity extends AppCompatActivity {
                 titleUpdateTime.setVisibility(View.VISIBLE);
                 etAddress.setVisibility(View.GONE);
                 ivCloseEdit.setVisibility(View.GONE);
+                getSupportFragmentManager().beginTransaction().hide(recentSearchFragment).commitAllowingStateLoss();
             }
         });
 
     }
 
 
-    public void requestWeather(String latitude,String longitude) {
+    public void requestWeather(String latitude, String longitude) {
         progressBar.setVisibility(View.VISIBLE);
-        String weatherUrl = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/" + latitude +"," + longitude + "?key=XHEWK3SWP6FUNFTEDKGCGYJ4T";
+        String weatherUrl = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/" + latitude + "," + longitude + "?key=XHEWK3SWP6FUNFTEDKGCGYJ4T";
         HttpUtil.sendOkHttpRequest(weatherUrl, new Callback() {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
@@ -173,6 +201,18 @@ public class WeatherActivity extends AppCompatActivity {
                             showWeatherInfo(weather);
                             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this);
                             prefs.edit().putString("city", address).commit();
+
+                            boolean isExit = false;
+                            for (int i = 0; i < SearchObj.INSTANCE.getData().size(); i++) {
+                                if (SearchObj.INSTANCE.getData().get(i).equals(address)) {
+                                    isExit = true;
+                                    break;
+                                }
+                            }
+                            if (!isExit) {
+                                Log.d("dddd","3eeeee");
+                                SearchObj.INSTANCE.getData().add(address);
+                            }
                         } else {
                             Toast.makeText(WeatherActivity.this, "query weather info failed", Toast.LENGTH_SHORT).show();
                             requestWeather("New York");
@@ -232,5 +272,14 @@ public class WeatherActivity extends AppCompatActivity {
     public static String fahrenheitToCelsius(double fahrenheit) {
         int result = (int) ((5.0 / 9.0) * (fahrenheit - 32));
         return String.valueOf(result);
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this);
+        prefs.edit().putString("search", new Gson().toJson(SearchObj.INSTANCE.getData())).commit();
+        super.onDestroy();
+        System.exit(0);
     }
 }
