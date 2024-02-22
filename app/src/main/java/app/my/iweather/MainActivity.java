@@ -63,6 +63,10 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 // 处理权限被拒绝的情况
                 Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show();
+                prefs.edit().putString("city","New York").commit();
+                Intent intent = new Intent(MainActivity.this, WeatherActivity.class);
+                startActivity(intent);
+                finish();
             }
         }
     }
@@ -129,4 +133,5 @@ public class MainActivity extends AppCompatActivity {
 
         return null;
     }
+
 }

@@ -13,8 +13,8 @@ android {
         applicationId = "app.my.iweather"
         minSdk = 22
         targetSdk = 34
-        versionCode = 100
-        versionName = "1.0.0"
+        versionCode = 102
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

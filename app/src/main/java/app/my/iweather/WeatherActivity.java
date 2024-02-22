@@ -3,13 +3,11 @@ package app.my.iweather;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -20,11 +18,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.view.GravityCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -32,12 +26,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import app.my.iweather.gson.Weather;
-import app.my.iweather.service.AutoUpdateService;
 import app.my.iweather.util.HttpUtil;
 import app.my.iweather.util.SoftInputUtil;
 import app.my.iweather.util.Utility;
-import kotlin.Unit;
-import kotlin.jvm.functions.Function1;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
@@ -264,8 +255,6 @@ public class WeatherActivity extends AppCompatActivity {
         }
         sportText.setText(weather.getDescription());
         weatherLayout.setVisibility(View.VISIBLE);
-        Intent intent = new Intent(this, AutoUpdateService.class);
-        startService(intent);
     }
 
 
@@ -275,11 +264,18 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
 
+//    @Override
+//    protected void onDestroy() {
+//        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this);
+//        prefs.edit().putString("search", new Gson().toJson(SearchObj.INSTANCE.getData())).commit();
+//        super.onDestroy();
+//        System.exit(0);
+//    }
+
     @Override
-    protected void onDestroy() {
+    public void onBackPressed() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this);
         prefs.edit().putString("search", new Gson().toJson(SearchObj.INSTANCE.getData())).commit();
-        super.onDestroy();
-        System.exit(0);
+        moveTaskToBack(true);
     }
 }
