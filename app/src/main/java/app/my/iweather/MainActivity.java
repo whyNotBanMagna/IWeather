@@ -52,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         }
+        Log.d("hhq","是否是模拟器"+isEmulator());
     }
 
     @Override
@@ -79,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onLocationChanged(Location location) {
                 // 处理位置更新
+                Log.d("县城",Thread.currentThread().getName());
                 double latitude = location.getLatitude();
                 double longitude = location.getLongitude();
                 String cityName = getCityName(latitude,longitude);
@@ -104,10 +106,25 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        // 请求位置更新
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+        if (isEmulator()){
+            prefs.edit().putString("city","New York").commit();
+            Intent intent = new Intent(MainActivity.this, WeatherActivity.class);
+            startActivity(intent);
+            finish();
+        }else {
+            if (locationManager.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER)) {
+                // 请求位置更新
+                if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+                }
+            }else {
+                prefs.edit().putString("city","New York").commit();
+                Intent intent = new Intent(MainActivity.this, WeatherActivity.class);
+                startActivity(intent);
+                finish();
+            }
         }
+
     }
 
     @Override
@@ -123,15 +140,21 @@ public class MainActivity extends AppCompatActivity {
         List<Address> addresses;
         try {
             addresses = geocoder.getFromLocation(latitude, longitude, 1);
-
             if (addresses != null && addresses.size() > 0) {
                 return addresses.get(0).getLocality();
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return null;
+        return "New York";
+    }
+
+
+    private boolean isEmulator(){
+        String buildManufacture = Build.MANUFACTURER.toLowerCase();
+        String buildModel = Build.MODEL.toLowerCase();
+        return  (buildManufacture.contains("genymotion") || buildManufacture.contains("google_sdk") || buildModel.contains("emulator") || buildModel.contains("sdk"));
     }
 
 }
